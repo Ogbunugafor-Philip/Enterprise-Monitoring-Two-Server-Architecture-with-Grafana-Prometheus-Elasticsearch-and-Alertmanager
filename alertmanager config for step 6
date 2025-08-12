@@ -1,0 +1,13 @@
+global:
+  smtp_smarthost: 'smtp.example.org:587'
+  smtp_from: 'alertmanager@example.org'
+  smtp_auth_username: 'alertmanager@example.org'
+  smtp_auth_password: 'your-email-password'
+
+route:
+  receiver: 'default-email'
+
+receivers:
+  - name: 'default-email'
+    email_configs:
+      - to: 'your-email@example.com'
