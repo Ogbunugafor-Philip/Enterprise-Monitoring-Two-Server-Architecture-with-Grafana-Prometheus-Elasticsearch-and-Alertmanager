@@ -1,0 +1,9 @@
+# Add this job to scrape Node Exporter on the App Server
+- job_name: 'node_exporter_app_server'
+  static_configs:
+    - targets: ['<Your-App-Server-IP>:9100']
+
+# Add this job to scrape cAdvisor on the App Server
+- job_name: 'cadvisor_app_server'
+  static_configs:
+    - targets: ['<Your-App-Server-IP>:8080']
