@@ -477,81 +477,119 @@ Once you have confirmed that the service is active, you can open your web browse
 <img width="975" height="325" alt="image" src="https://github.com/user-attachments/assets/bb937ee7-33f9-42d6-9cc4-2e854dcd5849" />
  
 ### Step 2: Install Node Exporter on App Server
+
 All commands would be performed on our App Server, not the Monitoring Server.
-Setting Up the Node Exporter User and Directory
+
+#### Setting Up the Node Exporter User and Directory
+
 First, we will create a dedicated user for Node Exporter and a temporary directory to download the software.
-	Create a new system user named node_exporter. This command creates a user that can't log in directly, which is a good security practice.
+- Create a new system user named node_exporter. This command creates a user that can't log in directly, which is a good security practice.
+```bash
 sudo useradd --no-create-home --shell /bin/false node_exporter
+```
 
-Downloading and Moving Node Exporter Files
-	Download the latest stable version of Node Exporter.
+### Downloading and Moving Node Exporter Files
+- Download the latest stable version of Node Exporter.
+```bash
 wget https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz
- 
+``` 
+<img width="975" height="357" alt="image" src="https://github.com/user-attachments/assets/f903b13b-1c33-4100-ae03-d56b10ea2624" />
 
-	Extract the files from the downloaded tarball.
+- Extract the files from the downloaded tarball.
+```bash
 tar xvfz node_exporter-1.7.0.linux-amd64.tar.gz
- 
+``` 
+<img width="975" height="156" alt="image" src="https://github.com/user-attachments/assets/853ff919-40d9-49a1-b7af-d25f1ea605b6" />
 
-	This creates a new directory. Navigate into it.
+- This creates a new directory. Navigate into it.
+```bash
 cd node_exporter-1.7.0.linux-amd64
-	Copy the node_exporter binary to the /usr/local/bin/ directory.
+```
+
+- Copy the node_exporter binary to the /usr/local/bin/ directory.
+```bash
 sudo mv node_exporter /usr/local/bin/
-	Set the owner of the node_exporter binary to the node_exporter user.
+```
+
+- Set the owner of the node_exporter binary to the node_exporter user.
+```bash
 sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
+```
 
-Creating the Node Exporter Systemd Service
-	We need to create a systemd service file to run Node Exporter as a background process. Use vi to create the service file.
+#### Creating the Node Exporter Systemd Service
+- We need to create a systemd service file to run Node Exporter as a background process. Use vi to create the service file.
+```bash
 sudo vi /etc/systemd/system/node_exporter.service
-	Press i to enter insert mode, and paste the following content into the file. This configuration tells the system to run the node_exporter binary as the node_exporter user.
+```
 
+Press i to enter insert mode, and paste the following content into the file. This configuration tells the system to run the node_exporter binary as the node_exporter user.
 
-[Unit]
-Description=Node Exporter
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-User=node_exporter
-Group=node_exporter
-Type=simple
-ExecStart=/usr/local/bin/node_exporter
-
-[Install]
-WantedBy=multi-user.target
 After pasting the content, press the Esc key to exit insert mode, then type :wq and press Enter to save and quit.
+[Node Exporter systemd](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/node%20exporter%20systemd)
 
-Starting and Verifying the Node Exporter Service
-	Reload systemd to recognize the new service file.
+
+#### Starting and Verifying the Node Exporter Service
+- Reload systemd to recognize the new service file.
+```bash
 sudo systemctl daemon-reload
-	Start the Node Exporter service.
+```
+
+- Start the Node Exporter service.
+```bash
 sudo systemctl start node_exporter
-	Enable the service to start automatically on system boot.
+```
+- Enable the service to start automatically on system boot.
+```bash
 sudo systemctl enable node_exporter
-	Check the status of the Node Exporter service to ensure it is running without errors.
+```
+
+- Check the status of the Node Exporter service to ensure it is running without errors.
+```bash
 sudo systemctl status node_exporter
- 
+``` 
+<img width="975" height="312" alt="image" src="https://github.com/user-attachments/assets/e9d8a717-1f15-406b-883f-4890602ee81b" />
+
 What to look for: The output should show a green dot and the text Active: active (running).
 
 Once you have confirmed that the service is active, you can open your web browser and navigate to http://<Your-App-Server-IP>:9100/metrics. You should see a large amount of raw metrics data.
+<img width="975" height="499" alt="image" src="https://github.com/user-attachments/assets/90aea502-40c4-450e-8fd5-9da835c3532c" />
  
 
-Installing Docker on the App Server
-	Update your local package list.
+#### Installing Docker on the App Server
+- Update your local package list.
+```bash
 sudo apt-get update
-	Install the necessary packages to allow apt to use a repository over HTTPS.
+```
+- Install the necessary packages to allow apt to use a repository over HTTPS.
+```bash
 sudo apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
-	Add Docker's official GPG key.
+```
+
+- Add Docker's official GPG key.
+```bash
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-	Set up the Docker repository.
+```
+
+- Set up the Docker repository.
+```bash
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	Update your package list again to include the new Docker repository.
+```
+
+- Update your package list again to include the new Docker repository.
+```bash
 sudo apt-get update
-	Install the latest version of Docker Engine, containerd, and Docker Compose.
+```
+- Install the latest version of Docker Engine, containerd, and Docker Compose.
+```bash
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-Running the cAdvisor Docker Container
+```
+
+#### Running the cAdvisor Docker Container
+
 We will run cAdvisor as a Docker container. The following command will download the cAdvisor image, run it in the background, and expose its metrics on port 8080.
-	Run the cAdvisor container
+- Run the cAdvisor container
+```bash
 docker run \
   --volume=/:/rootfs:ro \
   --volume=/var/run:/var/run:rw \
@@ -561,278 +599,316 @@ docker run \
   --detach=true \
   --name=cadvisor \
   gcr.io/cadvisor/cadvisor:latest
- 
+``` 
+<img width="975" height="480" alt="image" src="https://github.com/user-attachments/assets/fc9565ac-7d49-41bf-acd3-ec4d513eec0f" />
 
-Verifying the cAdvisor Container
-	Run the docker ps command to list all running containers.
+#### Verifying the cAdvisor Container
+- Run the docker ps command to list all running containers.
+```bash
 sudo docker ps
+```
+
 What to look for: You should see an entry for a container named cadvisor with the image gcr.io/google-containers/cadvisor:latest and a status of Up.
+<img width="975" height="179" alt="image" src="https://github.com/user-attachments/assets/1cc689ba-6d0d-4252-93bf-c120e00398ca" />
  
 Once you have confirmed that the container is running, you can access the metrics page from your browser.
 Open your web browser and navigate to http://<Your-App-Server-IP>:8080. You should see a large amount of raw container metrics data.
- 
+ <img width="975" height="502" alt="image" src="https://github.com/user-attachments/assets/a25c9644-103c-4c86-a712-b9c527522076" />
 
-Step 3: Configuring Prometheus on the Monitoring Server
+
+### Step 3: Configuring Prometheus on the Monitoring Server
+
 We will now add two new jobs to our prometheus.yml file to scrape the Node Exporter and cAdvisor metrics from the App Server.
-	On your Monitoring Server, open the Prometheus configuration file.
+
+- On your Monitoring Server, open the Prometheus configuration file.
+```bash
 sudo vi /etc/prometheus/prometheus.yml
-	Add the following two new jobs to the scrape_configs section. Make sure to replace <Your-App-Server-IP> with the actual public IP address of your App Server.
-YAML
-# Add this job to scrape Node Exporter on the App Server
-- job_name: 'node_exporter_app_server'
-  static_configs:
-    - targets: ['<Your-App-Server-IP>:9100']
+```
 
-# Add this job to scrape cAdvisor on the App Server
-- job_name: 'cadvisor_app_server'
-  static_configs:
-    - targets: ['<Your-App-Server-IP>:8080']
+Add the following two new jobs to the scrape_configs section. Make sure to replace <Your-App-Server-IP> with the actual public IP address of your App Server.
+
+[Prometheus config for Step 3](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/prometheus%20config%20for%20step%203)
+
 After you have added the new jobs, save and close the file. Press Esc, then type :wq and press Enter.
-	Check the syntax of the Prometheus configuration file to ensure there are no errors.
+
+- Check the syntax of the Prometheus configuration file to ensure there are no errors.
+```bash
 promtool check config /etc/prometheus/prometheus.yml
- 
+```
+<img width="975" height="128" alt="image" src="https://github.com/user-attachments/assets/82c55d35-8378-40d1-9c1b-cb50454e04b8" />
 
-	Restart the Prometheus service to load the new configuration.
+
+- Restart the Prometheus service to load the new configuration.
+```bash
 sudo systemctl restart prometheus
+```
 After these have completed, let us navigate to our Prometheus UI in our browser at http://<Your-Monitoring-Server-IP>:9090/targets and know if we can see all three targets (prometheus, node_exporter_app_server, and cadvisor_app_server) as UP.
- 
+ <img width="975" height="344" alt="image" src="https://github.com/user-attachments/assets/213a5942-cdce-4f7f-9268-eafe1b9083c0" />
 
-Step 4: Create Metrics Dashboards in Grafana
+
+#### Step 4: Create Metrics Dashboards in Grafana
+
 On your Monitoring Server, open your web browser and navigate to the Grafana dashboard at http://<Your-Monitoring-Server-IP>:3000.
-	Add Prometheus as a data source.
-	In Grafana, go to Settings (gear icon) ->connection -> Data Sources.
-	Click Add data source.
-	Select Prometheus.
-	In the URL field, enter http://localhost:9090.
-	Click Save & Test. You should see a green message that says "Data source is working."
+
+- Add Prometheus as a data source.
+- In Grafana, go to Settings (gear icon) ->connection -> Data Sources.
+- Click Add data source.
+- Select Prometheus.
+- In the URL field, enter http://localhost:9090.
+- Click Save & Test. You should see a green message that says "Data source is working."
+  
+  <img width="921" height="165" alt="image" src="https://github.com/user-attachments/assets/cd394d3d-f2d1-4c9c-9394-d1f1bf2770e9" />
+
  
 
-	Import pre-built dashboards.
-	Go to the Grafana dashboard and click the Dashboards (grid icon) -> Import.
-	In the Import via grafana.com field, enter 1860. This is a popular dashboard for Node Exporter.
-	Click Load.
-	On the next page, select Prometheus as the data source and click Import.
-	Repeat this process for the cAdvisor dashboard using ID 11776.
-Cadvisor Dashboard
+#### Import pre-built dashboards.
+- Go to the Grafana dashboard and click the Dashboards (grid icon) -> Import.
+- In the Import via grafana.com field, enter 1860. This is a popular dashboard for Node Exporter.
+- Click Load.
+- On the next page, select Prometheus as the data source and click Import.
+- Repeat this process for the cAdvisor dashboard using ID 11776.
+
+
+#### Cadvisor Dashboard
+<img width="940" height="496" alt="image" src="https://github.com/user-attachments/assets/221c18b1-8a37-447c-8aaa-8e80445a4dc4" />
+
  
 
-Node exporter dashboard
+#### Node exporter dashboard
+<img width="944" height="439" alt="image" src="https://github.com/user-attachments/assets/594b7abc-16d3-4204-b412-4df89985c051" />
+
  
 
-Step 5: Configure Log Pipeline (App → Monitoring)
-	Let us update our App Server
+### Step 5: Configure Log Pipeline (App → Monitoring)
+
+- Let us update our App Server
+```bash
 sudo apt-get update 
-	Download and install the public signing key for the Elastic repository.
+```
+
+- Download and install the public signing key for the Elastic repository.
+```bash
 sudo wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
-	Add the Elastic source list to your apt sources.
+```
+
+- Add the Elastic source list to your apt sources.
+```bash
 echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
-	Update your package list again.
+```
+- Update your package list again.
+```bash
 sudo apt-get update
-	Now, install Filebeat.
+```
+
+- Now, install Filebeat.
+```bash
 sudo apt-get install filebeat
- 
+``` 
+<img width="975" height="322" alt="image" src="https://github.com/user-attachments/assets/79931298-4f18-4452-ab94-36673dabeb39" />
 
 We will now edit the filebeat.yml configuration file. We will configure Filebeat to collect logs from a specific path and send them to the Logstash instance on our Monitoring Server.
-	Open the Filebeat configuration file on your App Server.
+- Open the Filebeat configuration file on your App Server.
+```bash
 sudo vi /etc/filebeat/filebeat.yml
-	Replace the existing content with the configuration below. This configuration will tell Filebeat to collect logs from a specific directory and output them to Logstash.
+```
+Replace the existing content with the configuration below. This configuration will tell Filebeat to collect logs from a specific directory and output them to Logstash.
 Make sure to replace <Your-Monitoring-Server-IP> with the public IP address of your Monitoring Server.
-YAML
-filebeat.inputs:
-- type: container
-  paths:
-    - "/var/lib/docker/containers/*/*.log"
 
-processors:
-  - add_docker_metadata: ~
-  - add_host_metadata: ~
+[Filebeat Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/filebeat%20configuration)
 
-output.logstash:
-  hosts: ["<Your-Monitoring-Server-IP>:5044"]
 After you have updated the file, press Esc, then type :wq and press Enter to save and quit.
-	Start the Filebeat service.
+
+- Start the Filebeat service.
+```bash
 sudo systemctl start filebeat
-	Enable the Filebeat service to start automatically on boot.
+```
+- Enable the Filebeat service to start automatically on boot.
+```bash
 sudo systemctl enable filebeat
-	Check the status of the Filebeat service to ensure it is running without errors.
+```
+
+- Check the status of the Filebeat service to ensure it is running without errors.
+```bash
 sudo systemctl status filebeat
- 
+``` 
+<img width="975" height="296" alt="image" src="https://github.com/user-attachments/assets/95aec801-312e-4596-b403-3f8cfed73ef4" />
+
 
 The next step is to configure Logstash on your Monitoring Server to receive the logs from Filebeat and send them to Elasticsearch.
-Configuring Logstash on the Monitoring Server
-On your Monitoring Server, you will create a new Logstash configuration file.
-	Create and open a new configuration file for Filebeat input.
-sudo vi /etc/logstash/conf.d/02-beats-input.conf
-	Add the following configuration to the file. This tells Logstash to listen for incoming Filebeat data on port 5044 and send it to Elasticsearch.
-Note: The IP address 98.87.138.59 is your Monitoring Server's IP address and should match the one you used in your Filebeat configuration.
-Code snippet
-input {
-  beats {
-    port => 5044
-  }
-}
 
-output {
-  elasticsearch {
-    hosts => ["http://98.87.138.59:9200"]
-    index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
-  }
-}
+#### Configuring Logstash on the Monitoring Server
+On your Monitoring Server, you will create a new Logstash configuration file.
+
+- Create and open a new configuration file for Filebeat input.
+```bash
+sudo vi /etc/logstash/conf.d/02-beats-input.conf
+```
+Add the following configuration to the file. This tells Logstash to listen for incoming Filebeat data on port 5044 and send it to Elasticsearch.
+Note: The IP address 98.87.138.59 is your Monitoring Server's IP address and should match the one you used in your Filebeat configuration.
+
+[Logstash config for Step 5](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/logstash%20config%20for%20step%205)
+
 After you have added the configuration, press Esc, then type :wq and press Enter to save and quit.
 Check Configuration and Restart Logstash
-	Check the syntax of your Logstash configuration file.
+
+- Check the syntax of your Logstash configuration file.
+```bash
 sudo -u logstash /usr/share/logstash/bin/logstash --path.settings /etc/logstash/ -t
- 
+``` 
+<img width="975" height="451" alt="image" src="https://github.com/user-attachments/assets/02336e4b-b8b7-47b2-a75c-6e2ec31172ac" />
 
-	If the syntax check passes, restart the Logstash service to apply the new configuration.
+- If the syntax check passes, restart the Logstash service to apply the new configuration.
+```bash
 sudo systemctl restart logstash
+```
 
-Configuring Grafana for Log Visualization
+#### Configuring Grafana for Log Visualization
 Let us navigate to Grafana dashboard at http://<Your-Monitoring-Server-IP>:3000.
-	Add Elasticsearch as a data source.
-	In Grafana, go to Settings (gear icon) -> Data Sources.
-	Click Add data source and select Elasticsearch.
-	For the URL, enter http://localhost:9200.
-	In the Index details section, enter filebeat-* for the Index name.
-	In the Time field name field, enter @timestamp.
-	Click Save & Test. You should see a green message that says "Data source is working."
- 
-Create a log panel in a Grafana dashboard. 
-	Go to Dashboard creation
-	In Grafana, click + (plus) → Dashboard → Add new panel.
-	In the Query section, select Elasticsearch.
-	Query type: Logs
-	Lucene query
-	Time range: Last 24 hours (adjust to your needs).
-	Under Fields, make sure @timestamp is selected as the time field and message is in the displayed fields.
-	Click Apply → name it something like "Application Logs".
- 
+- Add Elasticsearch as a data source.
+- In Grafana, go to Settings (gear icon) -> Data Sources.
+- Click Add data source and select Elasticsearch.
+- For the URL, enter http://localhost:9200.
+- In the Index details section, enter filebeat-* for the Index name.
+- In the Time field name field, enter @timestamp.
+- Click Save & Test. You should see a green message that says "Data source is working."
+ <img width="930" height="263" alt="image" src="https://github.com/user-attachments/assets/4f4f0b1c-a822-4c8c-bd6c-883284e0bc86" />
+
+#### Create a log panel in a Grafana dashboard. 
+- Go to Dashboard creation
+- In Grafana, click + (plus) → Dashboard → Add new panel.
+- In the Query section, select Elasticsearch.
+- Query type: Logs
+- Lucene query
+- Time range: Last 24 hours (adjust to your needs).
+- Under Fields, make sure @timestamp is selected as the time field and message is in the displayed fields.
+- Click Apply → name it something like "Application Logs".
+ <img width="975" height="365" alt="image" src="https://github.com/user-attachments/assets/e768e1e0-e3fa-4ecc-8811-c21729321ba4" />
+
 
 So far, we can now collect and view the following;
-	System metrics (CPU, memory, disk) – via Node Exporter
-	Container metrics (running containers, resource usage) – via cAdvisor
-	Application logs – via Filebeat → Logstash → Elasticsearch
-	Prometheus self-metrics (Prometheus health and performance)
+- System metrics (CPU, memory, disk) – via Node Exporter
+- Container metrics (running containers, resource usage) – via cAdvisor
+- Application logs – via Filebeat → Logstash → Elasticsearch
+- Prometheus self-metrics (Prometheus health and performance)
 
-Step 6: Set Up Alerting
+
+### Step 6: Set Up Alerting
 You will perform these actions on your Monitoring Server.
-	Create a configuration file for Alertmanager. This file will define how alerts are routed and what receivers (e.g., email, Slack) are used.
+
+- Create a configuration file for Alertmanager. This file will define how alerts are routed and what receivers (e.g., email, Slack) are used.
+```bash
 sudo vi /etc/prometheus/alertmanager.yml
-	Add the following basic configuration to the file. This sets up a default email receiver. You must replace the placeholder values with your own email and SMTP server details.
-global:
-  smtp_smarthost: 'smtp.example.org:587'
-  smtp_from: 'alertmanager@example.org'
-  smtp_auth_username: 'alertmanager@example.org'
-  smtp_auth_password: 'your-email-password'
+```
+Add the following basic configuration to the file. This sets up a default email receiver. You must replace the placeholder values with your own email and SMTP server details.
+[Alertmanager config for Step 6](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alertmanager%20config%20for%20step%206)
 
-route:
-  receiver: 'default-email'
 
-receivers:
-- name: 'default-email'
-  email_configs:
-  - to: 'your-email@example.com'
 After you have added the content and replaced the placeholder values, press Esc, then type :wq and press Enter to save and quit.
-	Create a systemd service file for Alertmanager.
+- Create a systemd service file for Alertmanager.
+```bash
 sudo vi /etc/systemd/system/alertmanager.service
-
+```
 Add the following content to the service file.
-[Unit]
-Description=Prometheus Alertmanager
-Wants=network-online.target
-After=network-online.target
+[Alertmanager systemd for Step 6](<https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alertmanager%20systemd%20for%20step%206>)
 
-[Service]
-User=prometheus
-Group=prometheus
-ExecStart=/usr/local/bin/alertmanager --config.file=/etc/prometheus/alertmanager.yml --web.listen-address=0.0.0.0:9093
-Restart=always
 
-[Install]
-WantedBy=multi-user.target
 After you have added the content, press Esc, then type :wq and press Enter to save and quit.
-	Reload the systemd daemon, enable, and start the Alertmanager service.
+
+- Reload the systemd daemon, enable, and start the Alertmanager service.
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable alertmanager
 sudo systemctl start alertmanager
-	Check the service status to make sure it is running.
-sudo systemctl status alertmanager
- 
+```
 
-Creating Prometheus Alert Rules (Continued)
+- Check the service status to make sure it is running.
+```bash
+sudo systemctl status alertmanager
+``` 
+<img width="975" height="406" alt="image" src="https://github.com/user-attachments/assets/eadb71c5-632f-4ea4-b656-e72d9f77bed9" />
+
+#### Creating Prometheus Alert Rules (Continued)
 You will perform these actions on your Monitoring Server.
-	Create a new file for your alert rules.
+- Create a new file for your alert rules.
+```bash
 sudo vi /etc/prometheus/alert.rules.yml
-	Add the following content to the file. This rule will now specifically target your App Server by its instance ID.
+```
+Add the following content to the file. This rule will now specifically target your App Server by its instance ID.
 groups:
-- name: node_exporter_alerts
-  rules:
-  - alert: InstanceDown
-    expr: up{job="node_exporter_app_server", instance="i-03362152d7d54901f:9100"} == 0
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "App Server down"
-      description: "The App Server (i-03362152d7d54901f) is down."
+
+[Alertrules creation](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alertrules%20creation)
+
 
 After you have added the content, press Esc, then type :wq and press Enter to save and quit.
-	Now, we need to tell Prometheus to load these rules. Open your prometheus.yml file.
-sudo vi /etc/prometheus/prometheus.yml
-	Add the rule_files and alerting sections to the prometheus.yml file.
-rule_files:
-  - "alert.rules.yml"
 
-alerting:
-  alertmanagers:
-  - static_configs:
-    - targets:
-      - localhost:9093
+- Now, we need to tell Prometheus to load these rules. Open your prometheus.yml file.
+```bash
+sudo vi /etc/prometheus/prometheus.yml
+```
+
+- Add the rule_files and alerting sections to the prometheus.yml file.
+  
+[Alert Prometheus Config](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alert%20prometheus%20config)
+
+
 After you have made these changes, press Esc, then type :wq and press Enter to save and quit.
-	Restart the Prometheus service to load the new rules.
+
+- Restart the Prometheus service to load the new rules.
+```bash
 sudo systemctl restart prometheus
+```
 Check if the alert rules are active in Prometheus.
+
 Go back to your Prometheus UI at http://<Your-Monitoring-Server-IP>:9090 and click on the Alerts tab.
 You should see the InstanceDown alert rule that you created listed there. If the App Server is down, the alert's status will be FIRING.
- 
+ <img width="998" height="215" alt="image" src="https://github.com/user-attachments/assets/b220e77c-9841-43e2-9c0d-7c88032b13b8" />
 
-Step 7: Build Master Overview Dashboard
+
+### Step 7: Build Master Overview Dashboard
 Download & import the already created master dashboard
+
+[📥 Download EMAS – Master Overview (All Logs) Dashboard JSON](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/raw/main/EMAS_Master_Overview_ALL_LOGS.json)
+
  
 Then in Grafana:
-1.	Dashboards → Import → Upload this JSON.
-2.	When prompted, map datasources:
-o	Prometheus → your Prometheus
-o	Elasticsearch → your filebeat-* datasource (with @timestamp)
-3.	Click Import.
+- Dashboards → Import → Upload this JSON.
+- When prompted, map datasources:
+  - Prometheus → your Prometheus
+  - Elasticsearch → your filebeat-* datasource (with @timestamp)
+- Click Import.
  
- 
+ <img width="975" height="451" alt="image" src="https://github.com/user-attachments/assets/8d8e769d-e82f-490b-9e7e-fdc790a73f05" />
 
-What our Master Dashboard Shows
-	Targets Health – Table showing status (UP/DOWN) of Prometheus, Node Exporter, and cAdvisor targets.
-	Firing Alerts – Count of active alerts in Prometheus Alertmanager.
-	CPU % (App Server) – Real-time CPU usage percentage per instance.
-	Memory % Used – Real-time memory utilization percentage per instance.
-	Load / Core – Load average per CPU core.
-	Disk % Used (top 5 mounts) – Highest disk usage percentages for up to 5 file system mounts.
-	Network In/Out (bytes/s) – Incoming and outgoing network traffic rates.
-	Containers Running – Total number of running containers.
-	Top-5 Containers CPU (rate) – Containers with the highest CPU usage.
-	Top-5 Containers Memory (MB) – Containers with the highest memory usage (in MB).
-	Log Volume (All Logs) – Time-series count of all logs ingested via Filebeat → Logstash → Elasticsearch.
-	Recent Logs (All) – Live table of all logs (most recent first) with timestamp, container/host, and message.
+ <img width="975" height="329" alt="image" src="https://github.com/user-attachments/assets/1942f70f-3de9-4e0a-a09a-033140430b56" />
 
-Conclusion
+
+
+#### What our Master Dashboard Shows
+- Targets Health – Table showing status (UP/DOWN) of Prometheus, Node Exporter, and cAdvisor targets.
+- Firing Alerts – Count of active alerts in Prometheus Alertmanager.
+- CPU % (App Server) – Real-time CPU usage percentage per instance.
+- Memory % Used – Real-time memory utilization percentage per instance.
+- Load / Core – Load average per CPU core.
+- Disk % Used (top 5 mounts) – Highest disk usage percentages for up to 5 file system mounts.
+- Network In/Out (bytes/s) – Incoming and outgoing network traffic rates.
+- Containers Running – Total number of running containers.
+- Top-5 Containers CPU (rate) – Containers with the highest CPU usage.
+- Top-5 Containers Memory (MB) – Containers with the highest memory usage (in MB).
+- Log Volume (All Logs) – Time-series count of all logs ingested via Filebeat → Logstash → Elasticsearch.
+- Recent Logs (All) – Live table of all logs (most recent first) with timestamp, container/host, and message.
+
+### Conclusion
 The Enterprise Monitoring & Alerting Stack (EMAS) project has successfully delivered a production-grade, two-server monitoring solution capable of providing real-time metrics, container monitoring, centralized log management, and proactive alerting for distributed systems.
 Starting with the deployment of dedicated Monitoring and Application servers, the project integrated a combination of industry-standard tools — Prometheus, Grafana, Alertmanager, Elasticsearch, Logstash, Filebeat, Node Exporter, and cAdvisor — to ensure a complete observability ecosystem.
 From the outset, the system was designed with scalability, fault isolation, and operational visibility in mind. Metrics collection and visualization were implemented using Prometheus and Grafana, container performance insights were enabled via cAdvisor, and logs were centralized through Elasticsearch with Filebeat and Logstash pipelines. Alertmanager provided proactive notifications for threshold breaches and service issues.
 The project culminated in the creation of an EMAS Master Dashboard, consolidating all critical performance indicators into one unified view — including:
-	Server health status and availability
-	CPU, memory, and load metrics
-	Disk utilization and network throughput
-	Container counts, top CPU/memory-consuming containers
-	Log volume trends and detailed recent logs from Elasticsearch
-	Alert states for rapid incident awareness
+- Server health status and availability
+- CPU, memory, and load metrics
+- Disk utilization and network throughput
+- Container counts, top CPU/memory-consuming containers
+- Log volume trends and detailed recent logs from Elasticsearch
+- Alert states for rapid incident awareness
+  
 This final architecture not only demonstrates technical proficiency in monitoring stack deployment and integration but also provides a practical, ready-to-use production framework that can be expanded to support more servers, cloud-native workloads, and multi-cluster environments.
 By completing this project, the monitoring environment is now robust, extensible, and operationally efficient, empowering DevOps teams to detect issues early, reduce downtime, and maintain optimal performance in any production-grade infrastructure.
 
