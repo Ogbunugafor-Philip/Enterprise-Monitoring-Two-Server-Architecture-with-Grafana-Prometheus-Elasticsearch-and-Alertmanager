@@ -134,6 +134,9 @@ Now we need to create the main configuration file, prometheus.yml. This file tel
     
 [Prometheus Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/Prometheus%20Configuration)
 
+
+<img width="869" height="269" alt="image" src="https://github.com/user-attachments/assets/97955ce1-d72e-4034-b2a4-963b3a6f6758" />
+
     
  
 #### What this configuration does:
@@ -154,6 +157,7 @@ sudo vi /etc/systemd/system/prometheus.service
   
 [Prometheus systemd service](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/prometheus%20systemd%20service)
 
+<img width="975" height="259" alt="image" src="https://github.com/user-attachments/assets/a268665c-a550-4565-b660-516a96057758" />
 
 #### What this configuration does:
 - [Unit]: Describes the service and its dependencies.
@@ -181,16 +185,19 @@ sudo systemctl enable prometheus
 ```bash
 sudo systemctl status prometheus
 ``` 
+<img width="975" height="447" alt="image" src="https://github.com/user-attachments/assets/30e25ca0-4a20-4f26-b894-4977ca20d361" />
 
 What to look for: The output should show a green dot and the text Active: active (running). If you see an error, please let me know, and we can troubleshoot it.
 Once you have confirmed that the service is active and running, you can open your web browser and navigate to http://<Your-Monitoring-Server-IP>:9090. (make sure to open port 9000 on your monitoring server). You should see the Prometheus web interface.
- 
+ <img width="975" height="344" alt="image" src="https://github.com/user-attachments/assets/8d5f88bf-3767-4b13-8eed-5177739b3343" />
+
 
 #### Installing Grafana
 - We need to install some packages that allow us to get a repository key and manage repositories over HTTPS.
 ```bash
 sudo apt-get install -y apt-transport-https software-properties-common wget
 ``` 
+<img width="975" height="504" alt="image" src="https://github.com/user-attachments/assets/b4468a2f-5962-40fb-b599-3fc4c6a5e335" />
 
 - Now, we will download and add the Grafana repository key. This key is used to verify that the software you're downloading is authentic.
 ```bash
@@ -201,6 +208,7 @@ sudo wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
 ```bash
 sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
 ``` 
+<img width="975" height="404" alt="image" src="https://github.com/user-attachments/assets/aa06b6a0-0ae9-4b10-9c01-5f06293e369e" />
 
 - Update your local package list to include the new Grafana repository.
 ```bash
@@ -211,6 +219,7 @@ sudo apt-get update
 ```bash
 sudo apt-get install -y grafana
  ```
+<img width="975" height="387" alt="image" src="https://github.com/user-attachments/assets/f4144789-c6f1-4705-a7e1-86f2f38e734f" />
 
 #### Starting and Verifying the Grafana Service
 Now, we will start the service and make sure it is running properly.
@@ -233,6 +242,7 @@ sudo systemctl enable grafana-server
 ```bash
 sudo systemctl status grafana-server
 ```
+<img width="975" height="239" alt="image" src="https://github.com/user-attachments/assets/b08466b5-1efb-4bc3-a8e0-bb7d66e87eb6" />
 
 What to look for: The output should show a green dot and the text Active: active (running
 
@@ -240,6 +250,7 @@ Once you have confirmed that the service is active, you can open your web browse
 
 - The default username and password are admin and admin.
 - Grafana will ask you to create a new password on your first login.
+<img width="975" height="369" alt="image" src="https://github.com/user-attachments/assets/26ca2840-8c44-42e9-b86c-3bc77b603eac" />
  
 
 #### Installing Elasticsearch
@@ -262,6 +273,7 @@ sudo apt-get update
 ```bash
 sudo apt-get install -y elasticsearch
 ``` 
+<img width="975" height="225" alt="image" src="https://github.com/user-attachments/assets/315f54f6-d615-4922-a56f-aee511e704bf" />
 
 #### Configuring and Starting Elasticsearch
 - We need to open the Elasticsearch configuration file. Remember to use vi as you requested.
@@ -272,7 +284,10 @@ sudo vi /etc/elasticsearch/elasticsearch.yml
 Once vi is open, press i to enter insert mode. Then, find the network.host and http.port settings and make them look like this.
 Note: You need to replace your_monitoring_server_private_ip with the actual private IP of your Monitoring Server. If you don't know it, you can find it by running the command hostname -I in a new terminal window.
 
-[Elasticsearch Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/elasticsearch%20configuration)
+[Elasticsearch Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/elasticsearch%20configuration
+
+<img width="975" height="298" alt="image" src="https://github.com/user-attachments/assets/8a00ba10-4f57-491d-ab48-ab894c477295" />
+
 
  
 Once you have added/edited those lines, press the Esc key to exit insert mode, then type: wq and press Enter to save and quit.
@@ -297,6 +312,7 @@ sudo systemctl enable elasticsearch
 ```bash
 sudo systemctl status elasticsearch
 ``` 
+<img width="975" height="305" alt="image" src="https://github.com/user-attachments/assets/ba20bc64-e9c8-4b1c-a0ec-d951db988ca2" />
 
 What to look for: The output should show a green dot and the text Active: active (running).
 
@@ -304,6 +320,7 @@ What to look for: The output should show a green dot and the text Active: active
 ```bash
 curl -X GET 'http://<monitoring server private ip>:9200'
 ```
+<img width="975" height="361" alt="image" src="https://github.com/user-attachments/assets/464622b5-583f-48b9-af76-666547504cc0" />
  
 If successful, this command should return a JSON response with details about your cluster.
 
@@ -318,6 +335,7 @@ sudo apt-get update
 ```bash
 sudo apt-get install -y logstash
 ``` 
+<img width="975" height="258" alt="image" src="https://github.com/user-attachments/assets/d887f4ee-af88-493b-aba4-50ff40b1bf38" />
 
 #### Configuring the Logstash Pipeline
 Logstash needs a configuration file to tell it what to do. This file defines the input (where logs come from) and the output (where to send them).
@@ -353,6 +371,7 @@ sudo systemctl enable logstash
 ```bash
 sudo systemctl status logstash
 ``` 
+<img width="975" height="318" alt="image" src="https://github.com/user-attachments/assets/56df7a57-9d4a-4b2c-96e7-ad98b7e05de1" />
 
 Note on Logstash status: Logstash can sometimes take a minute or two to start up. If the status shows active (running), it is working. If it shows active (exited) after a moment, this can also be normal if it has not yet received any log data. The key is that the service should not be in a failed state.
 
@@ -380,11 +399,14 @@ sudo chown alertmanager:alertmanager /var/lib/alertmanager
 - Download the latest stable version of Alertmanager.
 ```bash
 wget https://github.com/prometheus/alertmanager/releases/download/v0.26.0/alertmanager-0.26.0.linux-amd64.tar.gz
-``` 
+```
+<img width="975" height="407" alt="image" src="https://github.com/user-attachments/assets/0fc1385b-fd4f-469a-b7d1-ecf7d164e2bc" />
+
 - Extract the files from the downloaded tarball.
 ```bash
 tar xvfz alertmanager-0.26.0.linux-amd64.tar.gz
 ``` 
+<img width="975" height="225" alt="image" src="https://github.com/user-attachments/assets/b7f437eb-390c-4054-99f6-17db55810698" />
 
 - This creates a new directory. Navigate into it.
 ```bash
@@ -447,12 +469,14 @@ sudo systemctl enable alertmanager
 ```bash
 sudo systemctl status alertmanager
 ``` 
+<img width="975" height="317" alt="image" src="https://github.com/user-attachments/assets/96036fca-a709-4f4c-86aa-d3c3de7dd2d7" />
 
 What to look for: The output should show a green dot and the text Active: active (running).
 
 Once you have confirmed that the service is active, you can open your web browser and navigate to http://<Your-Monitoring-Server-IP>:9093 (make sure you open port 9093 in your monitoring server security). You should see the Alertmanager web interface.
+<img width="975" height="325" alt="image" src="https://github.com/user-attachments/assets/bb937ee7-33f9-42d6-9cc4-2e854dcd5849" />
  
-Step 2: Install Node Exporter on App Server
+### Step 2: Install Node Exporter on App Server
 All commands would be performed on our App Server, not the Monitoring Server.
 Setting Up the Node Exporter User and Directory
 First, we will create a dedicated user for Node Exporter and a temporary directory to download the software.
