@@ -1,0 +1,7 @@
+# ---------------------------------- Network -----------------------------------
+#
+# Set the address and port to bind to for HTTP and transport.
+# network.host: 192.168.0.1
+#
+network.host: your_monitoring_server_private_ip
+http.port: 9200
