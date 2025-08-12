@@ -63,285 +63,393 @@ NOTE: We already have a full-stack application (frontend + backend), fully Docke
 
 First, we will create a dedicated user for Prometheus and the necessary directories to store its configuration and data. This is a security best practice.
 
-	Create a new system user named prometheus. This command creates a user that can't log in directly, which is more secure.
-sudo useradd --no-create-home --shell /bin/false prometheus
-	Create the directory where Prometheus configuration files will live.
-sudo mkdir /etc/prometheus
-	Create the directory where Prometheus will store its data.
-sudo mkdir /var/lib/prometheus
-	Set the owner of the data directory to the prometheus user.
-sudo chown prometheus:prometheus /var/lib/prometheus
-Downloading and Moving Prometheus Files
-	Download the latest stable version of Prometheus. We'll use wget for this.
-wget https://github.com/prometheus/prometheus/releases/download/v2.46.0/prometheus-2.46.0.linux-amd64.tar.gz
- 
+- Create a new system user named prometheus. This command creates a user that can't log in directly, which is more secure.
+  ```bash
+  sudo useradd --no-create-home --shell /bin/false prometheus
+	```
 
-	Extract the files from the downloaded tarball.
-tar xvfz prometheus-2.46.0.linux-amd64.tar.gz
- 
+- Create the directory where Prometheus configuration files will live.
+  ```bash
+  sudo mkdir /etc/prometheus
+  ```
 
-	This creates a new directory. Navigate into it.
-cd prometheus-2.46.0.linux-amd64
-	Copy the prometheus and promtool binaries to the /usr/local/bin/ directory, which is in your system's PATH.
-sudo mv prometheus promtool /usr/local/bin/
-	Set the owner of the prometheus and promtool binaries to the prometheus user.
-sudo chown prometheus:prometheus /usr/local/bin/prometheus /usr/local/bin/promtool
-	Copy the consoles and console_libraries directories to the /etc/prometheus directory.
-sudo mv consoles console_libraries /etc/prometheus/
-	Set the owner of the consoles directories and all their files to the prometheus user.
-sudo chown -R prometheus:prometheus /etc/prometheus/consoles /etc/prometheus/console_libraries
+- Create the directory where Prometheus will store its data.
+  ```bash
+  sudo mkdir /var/lib/prometheus
+  ```
 
-Creating the Prometheus Configuration File
+- Set the owner of the data directory to the prometheus user.
+  ```bash
+  sudo chown prometheus:prometheus /var/lib/prometheus
+  ```
+
+#### Downloading and Moving Prometheus Files
+- Download the latest stable version of Prometheus. We'll use wget for this.
+  ```bash
+  wget https://github.com/prometheus/prometheus/releases/download/v2.46.0/prometheus-2.46.0.linux-amd64.tar.gz
+  ```
+  <img width="975" height="292" alt="image" src="https://github.com/user-attachments/assets/0430a0ff-92e5-4bcd-9efa-0ab078ce5765" />
+
+- Extract the files from the downloaded tarball.
+  ```bash
+  tar xvfz prometheus-2.46.0.linux-amd64.tar.gz
+  ```
+
+  <img width="975" height="381" alt="image" src="https://github.com/user-attachments/assets/d8617c36-899b-4bbe-970b-af7fcbccf1c6" />
+
+
+- This creates a new directory. Navigate into it.
+  ```bash
+  cd prometheus-2.46.0.linux-amd64
+  ```
+- Copy the prometheus and promtool binaries to the /usr/local/bin/ directory, which is in your system's PATH.
+  ```bash
+  sudo mv prometheus promtool /usr/local/bin/
+  ```
+
+  - Set the owner of the prometheus and promtool binaries to the prometheus user.
+  ```bash
+  sudo chown prometheus:prometheus /usr/local/bin/prometheus /usr/local/bin/promtool
+  ```
+
+  - Copy the consoles and console_libraries directories to the /etc/prometheus directory.
+  ```bash
+  sudo mv consoles console_libraries /etc/prometheus/
+  ```
+
+  - Set the owner of the consoles directories and all their files to the prometheus user.
+  ```bash
+  sudo chown -R prometheus:prometheus /etc/prometheus/consoles /etc/prometheus/console_libraries
+  ```
+
+#### Creating the Prometheus Configuration File
+
 Now we need to create the main configuration file, prometheus.yml. This file tells Prometheus what to monitor. We'll start with a basic configuration that tells Prometheus to monitor itself.
-	Use the vi text editor to create and open the configuration file.
-sudo vi /etc/prometheus/prometheus.yml
-	Paste the following content into the editor. This is a basic but complete configuration.
-global:
-  scrape_interval: 15s
 
-scrape_configs:
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
+- Use the vi text editor to create and open the configuration file.
+  ```bash
+  sudo vi /etc/prometheus/prometheus.yml
+  ```
+  - Paste the following content into the editor. This is a basic but complete configuration.
+    
+[Prometheus Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/Prometheus%20Configuration)
+
+    
  
-What this configuration does:
-	global: Defines a default scrape interval of 15 seconds.
-	scrape_configs: This is a list of all the services Prometheus will monitor.
-	- job_name: 'prometheus': This creates a monitoring job named 'prometheus'.
-	targets: ['localhost:9090']: This tells Prometheus to scrape metrics from itself, at the default port 9090.
-Creating the Prometheus Systemd Service
+#### What this configuration does:
+- global: Defines a default scrape interval of 15 seconds.
+- scrape_configs: This is a list of all the services Prometheus will monitor.
+- - job_name: 'prometheus': This creates a monitoring job named 'prometheus'.
+- targets: ['localhost:9090']: This tells Prometheus to scrape metrics from itself, at the default port 9090.
+
+#### Creating the Prometheus Systemd Service
+
 To run Prometheus as a background service, we will create a systemd service file. This allows you to manage it easily with commands like sudo systemctl start prometheus.
-	Use vi to create and open the service file.
+- Use vi to create and open the service file.
+```bash
 sudo vi /etc/systemd/system/prometheus.service
-	Paste the following content into the editor. This tells systemd how to run Prometheus.
-[Unit]
-Description=Prometheus
-Wants=network-online.target
-After=network-online.target
+```
 
-[Service]
-User=prometheus
-Group=prometheus
-Type=simple
-ExecStart=/usr/local/bin/prometheus \
-    --config.file /etc/prometheus/prometheus.yml \
-    --storage.tsdb.path /var/lib/prometheus/ \
-    --web.console.templates=/etc/prometheus/consoles \
-    --web.console.libraries=/etc/prometheus/console_libraries
+- Paste the following content into the editor. This tells systemd how to run Prometheus.
+  
+[Prometheus systemd service](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/prometheus%20systemd%20service)
 
-[Install]
-WantedBy=multi-user.target
- 
 
-What this configuration does:
-	[Unit]: Describes the service and its dependencies.
-	[Service]: Specifies how to run the service. User and Group ensure it runs as the user we created. ExecStart is the main command that starts Prometheus, pointing to the configuration file, data storage, and console files.
-	[Install]: Tells systemd to start the service when the system boots up.
+#### What this configuration does:
+- [Unit]: Describes the service and its dependencies.
+- [Service]: Specifies how to run the service. User and Group ensure it runs as the user we created. ExecStart is the main command that starts Prometheus, pointing to the           configuration file, data storage, and console files.
+- [Install]: Tells systemd to start the service when the system boots up.
 
-Starting and verifying the Prometheus Service
-These final commands will start Prometheus and ensure it's running correctly.
-	Reload systemd to recognize the new service file.
+#### Starting and verifying the Prometheus Service
+
+- These final commands will start Prometheus and ensure it's running correctly. Reload systemd to recognize the new service file.
+```bash
 sudo systemctl daemon-reload
-	Start the Prometheus service.
+```
+
+- Start the Prometheus service.
+```bash
 sudo systemctl start prometheus
-	Enable the service to start automatically on system boot.
+```
+
+- Enable the service to start automatically on system boot.
+```bash
 sudo systemctl enable prometheus
-	Check the status of the Prometheus service to ensure it is running without errors.
+```
+
+- Check the status of the Prometheus service to ensure it is running without errors.
+```bash
 sudo systemctl status prometheus
- 
+``` 
+
 What to look for: The output should show a green dot and the text Active: active (running). If you see an error, please let me know, and we can troubleshoot it.
 Once you have confirmed that the service is active and running, you can open your web browser and navigate to http://<Your-Monitoring-Server-IP>:9090. (make sure to open port 9000 on your monitoring server). You should see the Prometheus web interface.
  
 
-Installing Grafana
-	We need to install some packages that allow us to get a repository key and manage repositories over HTTPS.
+#### Installing Grafana
+- We need to install some packages that allow us to get a repository key and manage repositories over HTTPS.
+```bash
 sudo apt-get install -y apt-transport-https software-properties-common wget
- 
+``` 
 
-	Now, we will download and add the Grafana repository key. This key is used to verify that the software you're downloading is authentic.
+- Now, we will download and add the Grafana repository key. This key is used to verify that the software you're downloading is authentic.
+```bash
 sudo wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-	Next, we will add the Grafana repository to your system's apt sources list. This tells your system where to find the Grafana software.
+```
+
+- Next, we will add the Grafana repository to your system's apt sources list. This tells your system where to find the Grafana software.
+```bash
 sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
- 
+``` 
 
-	Update your local package list to include the new Grafana repository.
+- Update your local package list to include the new Grafana repository.
+```bash
 sudo apt-get update
-	Finally, install Grafana from the repository.
+```
+
+- Finally, install Grafana from the repository.
+```bash
 sudo apt-get install -y grafana
- 
+ ```
 
-Starting and Verifying the Grafana Service
+#### Starting and Verifying the Grafana Service
 Now, we will start the service and make sure it is running properly.
-	Reload systemd to recognize the new Grafana service.
+
+- Reload systemd to recognize the new Grafana service.
+```bash
 sudo systemctl daemon-reload
-	Start the Grafana service.
+```
+
+- Start the Grafana service.
+```bash
 sudo systemctl start grafana-server
-	Enable the service to start automatically on system boot
+```
+- Enable the service to start automatically on system boot
+```bash
 sudo systemctl enable grafana-server
-	Check the status of the Grafana service to ensure it is running without errors.
+```
+
+- Check the status of the Grafana service to ensure it is running without errors.
+```bash
 sudo systemctl status grafana-server
- 
-What to look for: The output should show a green dot and the text Active: active (running).
+```
+
+What to look for: The output should show a green dot and the text Active: active (running
+
 Once you have confirmed that the service is active, you can open your web browser and navigate to http://<Your-Monitoring-Server-IP>:3000. (make sure to open port 3000 on your monitoring server)
-	The default username and password are admin and admin.
-	Grafana will ask you to create a new password on your first login.
+
+- The default username and password are admin and admin.
+- Grafana will ask you to create a new password on your first login.
  
 
-Installing Elasticsearch
-	We will add the GPG key for the Elastic repository. This key is used to verify the authenticity of the Elasticsearch package.
+#### Installing Elasticsearch
+- We will add the GPG key for the Elastic repository. This key is used to verify the authenticity of the Elasticsearch package.
+```bash
 sudo wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
-	Now, we'll save the repository definition to the /etc/apt/sources.list.d/ directory.
-echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
-	Update your local package list to include the new Elastic repository.
-sudo apt-get update
-	Finally, install Elasticsearch from the repository.
-sudo apt-get install -y elasticsearch
- 
+```
 
-Configuring and Starting Elasticsearch
-	We need to open the Elasticsearch configuration file. Remember to use vi as you requested.
+- Now, we'll save the repository definition to the /etc/apt/sources.list.d/ directory.
+```bash
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+```
+
+- Update your local package list to include the new Elastic repository.
+```bash
+sudo apt-get update
+```
+
+- Finally, install Elasticsearch from the repository.
+```bash
+sudo apt-get install -y elasticsearch
+``` 
+
+#### Configuring and Starting Elasticsearch
+- We need to open the Elasticsearch configuration file. Remember to use vi as you requested.
+```bash
 sudo vi /etc/elasticsearch/elasticsearch.yml
-	Once vi is open, press i to enter insert mode. Then, find the network.host and http.port settings and make them look like this.
+```
+
+Once vi is open, press i to enter insert mode. Then, find the network.host and http.port settings and make them look like this.
 Note: You need to replace your_monitoring_server_private_ip with the actual private IP of your Monitoring Server. If you don't know it, you can find it by running the command hostname -I in a new terminal window.
-YAML
-# ---------------------------------- Network -----------------------------------
-#
-# Set the address and port to bind to for HTTP and transport.
-# network.host: 192.168.0.1
-#
-network.host: your_monitoring_server_private_ip
-http.port: 9200
+
+[Elasticsearch Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/elasticsearch%20configuration)
+
  
 Once you have added/edited those lines, press the Esc key to exit insert mode, then type: wq and press Enter to save and quit.
-Starting and Verifying Elasticsearch
-	Reload systemd to recognize the Elasticsearch service.
+
+#### Starting and Verifying Elasticsearch
+- Reload systemd to recognize the Elasticsearch service.
+```bash
 sudo systemctl daemon-reload
-	Start the Elasticsearch service.
+```
+
+- Start the Elasticsearch service.
+```bash
 sudo systemctl start elasticsearch
-	Enable the service to start automatically on system boot.
+```
+
+- Enable the service to start automatically on system boot.
+```bash
 sudo systemctl enable elasticsearch
-	Check the status of the service to ensure it is running.
+```
+
+- Check the status of the service to ensure it is running.
+```bash
 sudo systemctl status elasticsearch
- 
+``` 
 
 What to look for: The output should show a green dot and the text Active: active (running).
-	Now, let's verify that Elasticsearch is responding. Run this curl command.
+
+- Now, let's verify that Elasticsearch is responding. Run this curl command.
+```bash
 curl -X GET 'http://<monitoring server private ip>:9200'
+```
  
 If successful, this command should return a JSON response with details about your cluster.
-Installing Logstash
-	First, update your local package list to ensure you have the latest information from the repository.
+
+
+#### Installing Logstash
+- First, update your local package list to ensure you have the latest information from the repository.
+```bash
 sudo apt-get update
-	Now, install Logstash.
+```
+
+- Now, install Logstash.
+```bash
 sudo apt-get install -y logstash
- 
-Configuring the Logstash Pipeline
+``` 
+
+#### Configuring the Logstash Pipeline
 Logstash needs a configuration file to tell it what to do. This file defines the input (where logs come from) and the output (where to send them).
 We will create a configuration file that listens for logs from your App Server (via Filebeat) and forwards them to Elasticsearch.
-	Open a new configuration file for Logstash. Remember to use vi.
+
+- Open a new configuration file for Logstash. Remember to use vi.
+```bash
 sudo vi /etc/logstash/conf.d/02-beats-output.conf
-	Press i to enter insert mode, and paste the following content into the file.
+```
+Press i to enter insert mode, and paste the following content into the file.
+
 Note: The hosts line is set to the private IP address of your Monitoring Server, which is where Elasticsearch is running.
-input {
-  beats {
-    port => 5044
-  }
-}
 
-output {
-  elasticsearch {
-    hosts => ["172.31.23.179:9200"]
-    index => "%{[@metadata][beat]}-%{[@metadata][version]}-%{+YYYY.MM.dd}"
-  }
-}
+[Logstash Configuration](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/logstash%20configuration)
 
-Starting and Verifying the Logstash Service
-	Reload systemd to recognize the Logstash service.
+
+#### Starting and Verifying the Logstash Service
+- Reload systemd to recognize the Logstash service.
+```bash
 sudo systemctl daemon-reload
-	Start the Logstash service.
+```
+
+- Start the Logstash service.
+```bash
 sudo systemctl start logstash
-	Enable the service to start automatically on system boot.
+```
+
+- Enable the service to start automatically on system boot.
+```bash
 sudo systemctl enable logstash
-	Check the status of the service to ensure it is running.
+```
+- Check the status of the service to ensure it is running.
+```bash
 sudo systemctl status logstash
- 
+``` 
+
 Note on Logstash status: Logstash can sometimes take a minute or two to start up. If the status shows active (running), it is working. If it shows active (exited) after a moment, this can also be normal if it has not yet received any log data. The key is that the service should not be in a failed state.
-Setting Up the Alertmanager User and Directories
-	Create a new system user named alertmanager. This command creates a user that can't log in directly, which is a good security practice.
+
+#### Setting Up the Alertmanager User and Directories
+- Create a new system user named alertmanager. This command creates a user that can't log in directly, which is a good security practice.
+```bash
 sudo useradd --no-create-home --shell /bin/false alertmanager
-	Create the directory where Alertmanager configuration files will live.
+```
+
+- Create the directory where Alertmanager configuration files will live.
+```bash
 sudo mkdir /etc/alertmanager
-	Create the directory where Alertmanager will store its data.
+```
+
+- Create the directory where Alertmanager will store its data.
+```bash
 sudo mkdir /var/lib/alertmanager
-	Set the owner of the data directory to the alertmanager user we created.
+```
+- Set the owner of the data directory to the alertmanager user we created.
+```bash
 sudo chown alertmanager:alertmanager /var/lib/alertmanager
-Downloading and Moving Alertmanager Files
-	Download the latest stable version of Alertmanager.
+```
+
+#### Downloading and Moving Alertmanager Files
+- Download the latest stable version of Alertmanager.
+```bash
 wget https://github.com/prometheus/alertmanager/releases/download/v0.26.0/alertmanager-0.26.0.linux-amd64.tar.gz
- 
-	Extract the files from the downloaded tarball.
+``` 
+- Extract the files from the downloaded tarball.
+```bash
 tar xvfz alertmanager-0.26.0.linux-amd64.tar.gz
- 
+``` 
 
-	This creates a new directory. Navigate into it.
+- This creates a new directory. Navigate into it.
+```bash
 cd alertmanager-0.26.0.linux-amd64
-	Copy the alertmanager and amtool binaries to the /usr/local/bin/ directory.
+```
+
+- Copy the alertmanager and amtool binaries to the /usr/local/bin/ directory.
+```bash
 sudo mv alertmanager amtool /usr/local/bin/
-	Set the owner of the alertmanager and amtool binaries to the alertmanager user.
+```
+- Set the owner of the alertmanager and amtool binaries to the alertmanager user.
+```bash
 sudo chown alertmanager:alertmanager /usr/local/bin/alertmanager /usr/local/bin/amtool
-Creating the Alertmanager Configuration File
+```
+
+#### Creating the Alertmanager Configuration File
 Alertmanager needs a configuration file, alertmanager.yml, to tell it how to handle incoming alerts and where to send notifications. We'll start with a basic configuration.
-	We need to open a new configuration file for Alertmanager. Remember to use vi.
+
+- We need to open a new configuration file for Alertmanager. Remember to use vi.
+```bash
 sudo vi /etc/alertmanager/alertmanager.yml
-	Press i to enter insert mode, and paste the following content into the file. This configuration sets up a basic receiver for alerts.
-YAML
-global:
-  resolve_timeout: 5m
+```
 
-route:
-  group_by: ['alertname']
-  group_wait: 10s
-  group_interval: 10s
-  repeat_interval: 1h
-  receiver: 'default-receiver'
+- Press i to enter insert mode, and paste the following content into the file. This configuration sets up a basic receiver for alerts.
 
-receivers:
-- name: 'default-receiver'
-  # Here you can define how to send alerts, e.g., to email, Slack, etc.
-  # For now, we will leave this empty as we will not be sending notifications.
+[Alertmanager Config](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alertmanager%20config)
+
 After pasting the content, press the Esc key to exit insert mode, then type :wq and press Enter to save and quit.
-Creating the Alertmanager Systemd Service
-	Use vi to create and open the service file.
+
+
+#### Creating the Alertmanager Systemd Service
+- Use vi to create and open the service file.
+```bash
 sudo vi /etc/systemd/system/alertmanager.service
-	Press i to enter insert mode, and paste the following content into the file.
-Ini, TOML
-[Unit]
-Description=Alertmanager
-Wants=network-online.target
-After=network-online.target
+```
 
-[Service]
-User=alertmanager
-Group=alertmanager
-Type=simple
-ExecStart=/usr/local/bin/alertmanager \
-    --config.file=/etc/alertmanager/alertmanager.yml \
-    --storage.path=/var/lib/alertmanager
+Press i to enter insert mode, and paste the following content into the file.
 
-[Install]
-WantedBy=multi-user.target
+[Alertmanager systemd service](https://github.com/Ogbunugafor-Philip/Enterprise-Monitoring-Two-Server-Architecture-with-Grafana-Prometheus-Elasticsearch-and-Alertmanager/blob/main/alertmanager%20systemd%20service)
+
+
 After pasting the content, press the Esc key to exit insert mode, then type :wq and press Enter to save and quit.
-Starting and Verifying the Alertmanager Service
-	Reload systemd to recognize the new service file.
+
+#### Starting and Verifying the Alertmanager Service
+- Reload systemd to recognize the new service file.
+```bash
 sudo systemctl daemon-reload
-	Start the Alertmanager service.
+```
+
+- Start the Alertmanager service.
+```bash
 sudo systemctl start alertmanager
-	Enable the service to start automatically on system boot.
+```
+
+- Enable the service to start automatically on system boot.
+```bash
 sudo systemctl enable alertmanager
-	Check the status of the Alertmanager service to ensure it is running without errors.
+```
+- Check the status of the Alertmanager service to ensure it is running without errors.
+```bash
 sudo systemctl status alertmanager
- 
+``` 
+
 What to look for: The output should show a green dot and the text Active: active (running).
+
 Once you have confirmed that the service is active, you can open your web browser and navigate to http://<Your-Monitoring-Server-IP>:9093 (make sure you open port 9093 in your monitoring server security). You should see the Alertmanager web interface.
  
 Step 2: Install Node Exporter on App Server
